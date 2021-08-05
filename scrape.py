@@ -1,7 +1,8 @@
 from selenium import webdriver
 import time
 
-def search(text):
+def search(driver, text):
+    """Search a text in scholar and get all results (10 pages max)"""
     searchBox = driver.find_element_by_id('gs_hdr_tsi')
     searchBox.send_keys(text)
 
@@ -9,15 +10,43 @@ def search(text):
     time.sleep(5)
     searchButton = driver.find_element_by_id('gs_hdr_tsb')
     searchButton.click()
+    return __get_all_results(driver)
+
+def scrape_by_url(driver, url, citations=None):
+    driver.get(url)
+    time.sleep(5)
+    if(citations):
+        page_count = int(citations/10) + 1
+        return __get_all_results(driver, page_count)
+    else:
+        return __get_all_results(driver)
+
+def __get_all_results(driver, page_count=None):
+    if(not page_count):
+        # Count the number of pages of results
+        pages = driver.find_elements_by_css_selector('td')
+        pages = pages[1:-1]
+        page_count = len(pages)
+        print(f"Number of pages of results = {len(pages)}")
+
+    # Array to hold the results
+    results = []
+
+    # Grab the first page. 
+    results += __grab_metadata(driver)
 
     # Grab metadata of all pages
-    meta_data = grab_metadata()
-    print(meta_data)
+    for page in range(2, page_count+1): #Skip first page since already done
+        pagination = driver.find_element_by_css_selector('tr') # Refreshing the context
+        pagination.find_element_by_link_text(f"{page}").click()
+        # page.find_element_by_css_selector('a').click() # click on the page number link
+        time.sleep(2) # Delay of 2 seconds
+        results += __grab_metadata(driver)
+    return results
 
-def scrape_cited_papers(paper_name):
-    pass
 
-def grab_metadata():
+def __grab_metadata(driver): 
+    """Grabs the content of the entire current page """
     metadata = []
     list_of_elements = driver.find_elements_by_class_name('gs_ri')
     for e in list_of_elements:
@@ -33,18 +62,5 @@ def grab_metadata():
             'citations': cited_by
         })
     return metadata
-
-driver = webdriver.Firefox()
-
-#URL of the website 
-url = "https://www.scholar.google.com/"
-   
-#opening link in the browser
-driver.get(url)
-search("energy in software")
-
-def constructQuery(keyword):
-    pass
-
 
 
