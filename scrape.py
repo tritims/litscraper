@@ -1,5 +1,6 @@
 from selenium import webdriver
 import time
+import random 
 
 def search(driver, text):
     """Search a text in scholar and get all results (10 pages max)"""
@@ -38,9 +39,12 @@ def __get_all_results(driver, page_count=None):
     # Grab metadata of all pages
     for page in range(2, page_count+1): #Skip first page since already done
         pagination = driver.find_element_by_css_selector('tr') # Refreshing the context
-        pagination.find_element_by_link_text(f"{page}").click()
+        try: 
+            pagination.find_element_by_link_text(f"{page}").click()
+        except:
+            continue
         # page.find_element_by_css_selector('a').click() # click on the page number link
-        time.sleep(2) # Delay of 2 seconds
+        time.sleep(random.randrange(5, 15)) # Delay of random seconds
         results += __grab_metadata(driver)
     return results
 
